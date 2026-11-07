@@ -1,8 +1,14 @@
-<p align="center"><img src="docs/assets/icon.png" width="80" alt="Catch what you see"></p>
+<p align="center">
+  <img src="docs/assets/icon.png" width="80" alt="Catch what you see">
+</p>
 
-# Catch what you see
+<h1 align="center">Catch what you see</h1>
 
-[中文](#catch-what-you-see) · [English](#english)
+<p align="center">
+  <a href="#chinese">中文版</a> · <a href="#english">English</a>
+</p>
+
+<a name="chinese"></a>
 
 基于 [Tendedero](https://github.com/alejandrobujan/tendedero) 做的一个改版，主要加了文字收藏和 Markdown 笔记。
 
