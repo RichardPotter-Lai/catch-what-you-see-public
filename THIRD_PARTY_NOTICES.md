@@ -15,3 +15,7 @@ The upstream license expressly excludes rights to the Tendedero name and icon, i
 
 The app links against frameworks provided by macOS. This repository does not redistribute Apple's SDK or system frameworks.
 
+## README illustration
+
+docs/assets/clothesline-preview.png was generated for Catch what you see using the built-in imagegen tool. It illustrates text notes, screenshots and Markdown storage; it is not an application screenshot. It does not reuse Tendedero's promotional artwork.
+

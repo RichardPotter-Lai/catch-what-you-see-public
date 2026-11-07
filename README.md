@@ -5,16 +5,28 @@
 <h1 align="center">Catch what you see</h1>
 
 <p align="center">
+  基于 <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a> 做的一个改版，主要加了文字收藏和 Markdown 笔记。
+</p>
+
+<p align="center">
   <a href="#chinese">中文版</a> · <a href="#english">English</a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/clothesline-preview.png" width="960" alt="功能示意图：文字便笺、截图与 Markdown 笔记挂在同一根晾衣绳上 / Text notes, screenshots and Markdown on one clothesline">
+</p>
+
+<p align="center">
+  <a href="https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest">下载 macOS 版</a> ·
+  <a href="docs/INSTALL.md">安装说明</a> ·
+  <a href="#从源码构建">从源码构建</a>
+  <br>
+  <sub>macOS 14+ · 功能示意图 / Feature illustration</sub>
 </p>
 
 <a name="chinese"></a>
 
-基于 [Tendedero](https://github.com/alejandrobujan/tendedero) 做的一个改版，主要加了文字收藏和 Markdown 笔记。
-
 原项目会把截图挂在屏幕上方的晾衣绳上。我很喜欢这个设计，也想把读文章时选中的几句话放上去，于是在原有代码上加了文字采集。现在，截图和文字便笺可以挂在同一根绳上，想再看或复制时，把晾衣绳拉下来就行。
-
-[下载](https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest) · [安装说明](docs/INSTALL.md)
 
 ## 安装
 
