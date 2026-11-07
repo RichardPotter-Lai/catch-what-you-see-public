@@ -1,0 +1,16 @@
+.DS_Store
+**/.build/
+**/build/
+**/DerivedData/
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+/Library/
+/archive/
+/Tendedero.app
+/graphify-out/
+**/.graphify_cache/
+**/.graphify-cache/
+*.xcuserstate
+xcuserdata/

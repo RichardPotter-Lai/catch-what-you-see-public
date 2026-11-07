@@ -1,0 +1,77 @@
+import Foundation
+import CaptureCore
+
+func checkTrash(_ root: URL) throws {
+    let folder = root.appendingPathComponent("trash-check")
+    let store = try MarkdownStore(root: folder)
+    let note = MarkdownNote(id: UUID(), operationID: UUID(), createdAt: "2026-11-03T00:00:00Z", title: "可恢复笔记", excerpt: "合成文字")
+    let saved = try store.save(note)
+    let index = LibraryIndex(root: folder)
+    try index.refresh()
+    let entry = index.entries[0]
+    let bytes = try Data(contentsOf: saved.url)
+    try Data((String(decoding: bytes, as: UTF8.self) + "外部变化").utf8).write(to: saved.url)
+    do { _ = try store.trash(entry); fatalError("旧快照不可删除") } catch LibraryIndex.Failure.changed { }
+    try bytes.write(to: saved.url)
+    let attachment = folder.appendingPathComponent("Attachments/unknown-owner.png")
+    try Data([1,2,3]).write(to: attachment)
+    let trashed = try store.trash(entry)
+    try require(!FileManager.default.fileExists(atPath: saved.url.path), "删除移出 Notes")
+    try require(try Data(contentsOf: trashed.url) == bytes, "回收站保持字节")
+    try require(try Data(contentsOf: attachment) == Data([1,2,3]), "不确定引用的附件不删除")
+    do { _ = try store.save(note); fatalError("重试不可复活已删除记录") } catch MarkdownStore.Failure.deleted { }
+    let restarted = try MarkdownStore(root: folder)
+    let deleted = try restarted.deletedNotes()
+    try require(deleted.count == 1, "重启仍可恢复")
+    let restored = try restarted.restore(deleted[0])
+    try require(try Data(contentsOf: restored) == bytes, "恢复保持字节")
+    try require(try restarted.deletedNotes().isEmpty, "恢复移出回收站")
+    try index.refresh()
+    let again = try restarted.trash(index.entries[0])
+    try bytes.write(to: folder.appendingPathComponent("Notes/external-copy.md"))
+    do { _ = try restarted.restore(again); fatalError("身份冲突不可恢复覆盖") } catch MarkdownStore.Failure.conflict { }
+    try require(FileManager.default.fileExists(atPath: again.url.path), "冲突保留回收站内容")
+    let sharedRoot = root.appendingPathComponent("trash-shared")
+    let shared = try MarkdownStore(root: sharedRoot)
+    let image = root.appendingPathComponent("trash-source.png")
+    let pixels = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=")!
+    try pixels.write(to: image)
+    let first = try shared.save(note, imageSource: image)
+    var other = note; other.id = UUID(); other.operationID = UUID()
+    let second = try shared.save(other, imageSource: image)
+    let sharedIndex = LibraryIndex(root: sharedRoot); try sharedIndex.refresh()
+    let removed = try shared.trash(sharedIndex.entries.first { $0.note?.id == first.note.id }!)
+    let asset = second.url.deletingLastPathComponent().appendingPathComponent(second.note.attachment!)
+    try require(try Data(contentsOf: asset) == pixels, "共享附件保持有效")
+    try require(try MarkdownFormat.decode(Data(contentsOf: second.url)).id == other.id, "另一笔记保持原样")
+    _ = try shared.restore(removed)
+    // 最后一条引用删除时附件也进入回收站，恢复任意笔记同时恢复附件。
+    try sharedIndex.refresh()
+    _ = try shared.trash(sharedIndex.entries.first { $0.note?.id == first.note.id }!)
+    try sharedIndex.refresh()
+    let lastRemoved = try shared.trash(sharedIndex.entries.first { $0.note?.id == second.note.id }!)
+    let recycledAsset = sharedRoot.appendingPathComponent(".trash/Attachments").appendingPathComponent(asset.lastPathComponent)
+    try require(!FileManager.default.fileExists(atPath: asset.path), "最后引用删除不能留下活动附件")
+    try require(try Data(contentsOf: recycledAsset) == pixels, "附件必须进回收站并保持字节")
+    _ = try shared.restore(lastRemoved)
+    try require(try Data(contentsOf: asset) == pixels, "恢复笔记同时恢复附件")
+    try require(!FileManager.default.fileExists(atPath: recycledAsset.path), "恢复不留多余附件副本")
+    let previouslyRemoved = try shared.deletedNotes().first!
+    _ = try shared.restore(previouslyRemoved)
+    try require(try Data(contentsOf: asset) == pixels, "共享的另一已删笔记可复用恢复的附件")
+    let hiddenCopy = sharedRoot.appendingPathComponent("Notes/.keep.md")
+    try FileManager.default.moveItem(at: second.url, to: hiddenCopy)
+    try sharedIndex.refresh()
+    _ = try shared.trash(sharedIndex.entries.first { $0.note?.id == first.note.id }!)
+    try require(try Data(contentsOf: asset) == pixels, "隐藏笔记的共享引用仍受保护")
+    let restoredVisible = try shared.restore(shared.deletedNotes().first!)
+    let unknownHidden = sharedRoot.appendingPathComponent("Notes/.unknown.md")
+    try Data("unknown reference".utf8).write(to: unknownHidden)
+    try sharedIndex.refresh()
+    do { _ = try shared.trash(sharedIndex.entries.first { $0.url == restoredVisible }!); fatalError("隐藏未知文档应阻止附件删除") }
+    catch MarkdownStore.Failure.unreadableDocuments { }
+    try require(try Data(contentsOf: asset) == pixels, "引用不明不得移动附件")
+    print("PASS: 隐藏笔记引用与隐藏未知文档也参与删除保护")
+    print("PASS: 图片随最后引用移入回收站，恢复联动，共享笔记不受损")
+    print("PASS: 手动删除/重启恢复、外部编辑保护、附件保留、重试不复活、恢复冲突不覆盖")
+}
