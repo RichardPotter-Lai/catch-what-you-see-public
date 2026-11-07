@@ -6,6 +6,41 @@
 
 目标为 macOS 14+。双架构包含 Apple 芯片与 Intel，但没有完成所有 Intel/旧系统实机验收。当前构建为 ad hoc 签名，没有 Developer ID 或 Apple 公证。若系统拦截，请确认来源后按“系统设置 → 隐私与安全性 → 仍要打开”的正常流程处理，不关闭 Gatekeeper。[Apple 说明](https://support.apple.com/102445)。
 
+## 终端安装
+
+在要使用这款应用的 Mac 上运行：
+
+```sh
+mkdir -p "$HOME/Downloads/Catch-what-you-see-install"
+cd "$HOME/Downloads/Catch-what-you-see-install"
+curl --fail --location --proto '=https' \
+  https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh \
+  --output install-macos.sh
+bash install-macos.sh
+```
+
+脚本下载 0.1.1 的 DMG 和 SHA256SUMS.txt，核对 SHA-256、应用签名与版本后安装。默认使用 `/Applications`；目录不可写时使用 `~/Applications`。不会覆盖目标位置已有的 App，也不会更改你的收藏或系统授权。安装前可以自行阅读下载的脚本。
+
+如需指定目录，或只安装、稍后自己打开：
+
+```sh
+bash install-macos.sh --destination "$HOME/Applications" --no-open
+```
+
+如果下载失败，确认能访问 GitHub 及其下载服务，再重试或手动下载 DMG。这里没有 Homebrew cask，也不要求为安装 App 配置 Swift 开发环境。
+
+## 交给桌面 Agent
+
+[主页](../README.md#让-agent-帮你安装) 有可直接复制给 Codex 桌面版、Claude Code、WorkBuddy 的安装话术。执行任务的 Agent 需要能访问目标 Mac 的终端和文件；系统弹窗、密码或 Touch ID 由你本人完成。
+
+Codex Cloud 通常在独立云端环境执行，见 [OpenAI 官方说明](https://learn.chatgpt.com/docs/environments/cloud-environments)。如果没有连接目标 Mac 的执行工具，可以让它准备命令，再交给本机 Agent。只在云端拉取源码不会完成本机安装。
+
+## 升级
+
+先正常退出正在运行的 Catch。确认现有 App 的实际路径，从 Releases 下载新 DMG 并核对校验值，再用 Finder 替换该目录中的旧 App，从同一目录启动。终端安装脚本会在同名 App 存在时停止，避免直接覆盖。
+
+笔记保存在独立资料库中，替换 App 不需要删除资料库。更新后的临时签名可能需要重新完成辅助功能授权，处理方法见下文。不要同时运行多个副本或多个截图设置接管工具。
+
 ## 使用
 
 - 选中文字后按下并松开 Option+C。
