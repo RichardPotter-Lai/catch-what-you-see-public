@@ -45,5 +45,4 @@ release 脚本构建 arm64/x86_64、验证签名与架构，再生成 DMG/校验
 - app/Sources/CaptureNative：系统文本服务。
 - app/Sources/Tendedero：继承并扩展的原生 UI、AX、快捷键与截图入口。目录名是来源结构，不是另一份应用。
 - app/Tests：合成行为检查与独立复制窗口。
-- openspec/specs：当前行为约定，包含 0.1.1 已接受的复制和反馈规则。
 

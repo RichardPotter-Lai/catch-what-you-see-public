@@ -14,3 +14,25 @@
 **/.graphify-cache/
 *.xcuserstate
 xcuserdata/
+
+# Local agent instructions, work logs, and planning files
+AGENTS.md
+AGENTS.*.md
+CLAUDE.md
+GLOSSARY.md
+.agents/
+.codex/
+.claude/
+/openspec/
+*.log
+__pycache__/
+
+# Credentials and signing material
+/secrets/
+/credentials/
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+*.provisionprofile

@@ -41,6 +41,11 @@ BIN="$OUT/CatchWhatYouSee"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/CatchWhatYouSee"
+# Release debug sections contain absolute source paths from the build machine.
+# Remove them before signing the executable for distribution.
+if [ "$CONFIG" = release ]; then
+  strip -S "$APP/Contents/MacOS/CatchWhatYouSee"
+fi
 cp ../LICENSE "$APP/Contents/Resources/LICENSE"
 cp ../THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/THIRD_PARTY_NOTICES.md"
 
