@@ -64,20 +64,23 @@
 
 ## 安装
 
-需要 macOS 14 或更新版本。到 [Releases](https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest) 下载 `.dmg`，打开后把应用拖到 Applications。安装包同时包含 Apple 芯片和 Intel 版本。
+需要 macOS 14 或更新版本，安装包同时包含 Apple 芯片和 Intel 版本。
 
-也可以在 Mac 的终端里运行下面几行，不需要 Homebrew 或 Swift。脚本会下载 0.1.1 安装包、核对 SHA-256，再复制并打开应用；目标位置已有同名应用时会停止。
+**推荐：一行命令安装**（打开“终端”粘贴回车，不需要 Homebrew 或 Swift）：
 
 ```sh
-mkdir -p "$HOME/Downloads/Catch-what-you-see-install"
-cd "$HOME/Downloads/Catch-what-you-see-install"
-curl --fail --location --proto '=https' \
-  https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh \
-  --output install-macos.sh
-bash install-macos.sh
+curl -fsSL https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh | bash
 ```
 
-脚本默认安装到 `/Applications`，目录不可写时使用 `~/Applications`。可以先打开下载的脚本看看。首次打开可能需要在“系统设置 → 隐私与安全性”中确认来源，文字收藏还需要辅助功能授权，具体见[安装与升级](docs/INSTALL.md)。
+脚本会下载最新 Release、核对 SHA-256 和签名，安装到 `/Applications` 并打开。用这种方式安装，**不会出现“无法验证开发者”的拦截**。升级旧版本：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh | bash -s -- --upgrade
+```
+
+**也可以手动下载**：到 [Releases](https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest) 下载 `.dmg`，把应用拖到 Applications。由于目前没有 Apple 公证，浏览器下载的版本首次打开会被拦下，处理方法见[安装说明](docs/INSTALL.md#首次打开被拦截)。
+
+首次打开后，应用会弹窗说明菜单栏图标的位置，并引导你开启“辅助功能”权限（Option+C 收藏文字需要）。
 
 ## 让 Agent 帮你安装
 
@@ -91,8 +94,8 @@ bash install-macos.sh
 https://github.com/RichardPotter-Lai/catch-what-you-see-public
 
 先阅读仓库 README.md 和 docs/INSTALL.md，确认系统为 macOS 14+。
-优先安装 Releases 的 universal DMG，核对 SHA256SUMS.txt；可以使用仓库的 scripts/install-macos.sh。
-如果本机已有安装，先核对路径和版本，保留我的资料库，告诉我是否需要升级。
+在终端运行：curl -fsSL https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh | bash
+（脚本会核对 SHA-256 和签名；如果提示已安装，确认后加 `bash -s -- --upgrade` 升级，资料库不受影响。）
 不要修改系统权限数据库、关闭 Gatekeeper，或上传我的笔记、截图和剪贴板。
 安装后从实际安装目录打开应用，说明 Option+C 怎么用。需要我完成的系统确认或 Touch ID 验证，请指出具体步骤。
 只有真实完成安装和启动后才报告成功；若没有本机执行能力，请把可执行命令和待我完成的步骤列出来。
@@ -121,7 +124,7 @@ WorkBuddy 的具体操作取决于你给它开放的工具。上面的文字是�
 
 不使用 OCR。图片或扫描件里没有可选文字时，按截图保存。
 
-当前界面为简体中文。安装包是临时签名，没有 Apple Developer ID 和公证。首次打开、辅助功能授权，以及更新后“开关已开却仍提示无权限”的处理，写在 [安装说明](docs/INSTALL.md)。
+当前界面为简体中文。安装包是临时签名，没有 Apple Developer ID 和公证；用上面的一行命令安装可避开首次打开的拦截。首次打开、辅助功能授权，以及更新后“开关已开却仍提示无权限”的处理，写在 [安装说明](docs/INSTALL.md)。
 
 ## 关于隐私
 

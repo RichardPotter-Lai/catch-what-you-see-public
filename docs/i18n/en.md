@@ -34,18 +34,15 @@ Edit it with your usual Markdown tools. Back up the entire library, including hi
 
 ## Install
 
-On macOS 14+, download the universal DMG from [Releases](https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest), open it, and drag the app to Applications. Or download and run the installer in your Mac's terminal:
+On macOS 14+, the easiest way is one line in Terminal (no Homebrew or Swift needed):
 
 ```sh
-mkdir -p "$HOME/Downloads/Catch-what-you-see-install"
-cd "$HOME/Downloads/Catch-what-you-see-install"
-curl --fail --location --proto '=https' \
-  https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh \
-  --output install-macos.sh
-bash install-macos.sh
+curl -fsSL https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh | bash
 ```
 
-You can read the script before running it. It downloads version 0.1.1, checks SHA-256, and refuses to replace an existing app. It uses `/Applications`, or `~/Applications` when the former is not writable. Opening an ad hoc signed app and granting Accessibility access may require your confirmation in System Settings. See [installation and updates](../INSTALL.md).
+It downloads the latest release, checks SHA-256 and the code signature, installs to `/Applications` (or `~/Applications` when that is not writable) and opens the app. Installed this way, macOS does **not** show the "cannot verify the developer" block. To upgrade an existing copy, append `-s -- --upgrade` after `bash`.
+
+You can also download the universal DMG from [Releases](https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest) and drag the app to Applications. The build is not notarized yet, so a browser download is blocked on first open; see [installation and updates](../INSTALL.md#首次打开被拦截) for the fix. On first launch the app shows where its menu bar icon is and walks you through granting Accessibility access, which Option+C needs.
 
 ## Ask a local agent
 
@@ -58,8 +55,9 @@ Give this to Codex desktop, Claude Code, or WorkBuddy with access to your Mac's 
 Install and open Catch what you see on this Mac:
 https://github.com/RichardPotter-Lai/catch-what-you-see-public
 
-Read README.md and ../INSTALL.md first. Check macOS 14+ and prefer the universal DMG in Releases, verifying SHA256SUMS.txt. You may use scripts/install-macos.sh.
-If an installation already exists, check its path/version and preserve my library before proposing an update.
+Check macOS 14+, then run in Terminal:
+curl -fsSL https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh | bash
+If it reports an existing installation, confirm with me, then rerun with `| bash -s -- --upgrade` (my library is kept).
 Keep Gatekeeper enabled and use normal system permission prompts; do not edit permission databases or upload private content.
 Open the installed app and explain Option+C. Tell me which system confirmations require my input. Report only installation and launch steps you actually completed.
 ```

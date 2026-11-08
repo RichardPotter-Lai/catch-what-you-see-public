@@ -39,5 +39,24 @@ if ! hdiutil verify "$DMG"; then
   rmdir "$VERIFY_MOUNT" 2>/dev/null || true
   VERIFY_MOUNT=''
 fi
+# Notarize when a Developer ID signed the app and a notarytool keychain
+# profile is configured. A notarized, stapled DMG opens without the
+# "cannot verify the developer" Gatekeeper block on other Macs.
+#   xcrun notarytool store-credentials catch-notary --apple-id ... --team-id ...
+#   NOTARY_PROFILE=catch-notary bash scripts/package-release.sh
+if codesign -dv "$APP" 2>&1 | grep -q 'Authority=Developer ID Application'; then
+  IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')}"
+  codesign --force --timestamp --sign "$IDENTITY" "$DMG"
+  if [ -n "${NOTARY_PROFILE:-}" ]; then
+    xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
+    xcrun stapler staple "$DMG"
+    spctl --assess --type open --context context:primary-signature -v "$DMG"
+  else
+    echo "WARNING: Developer ID signed but NOTARY_PROFILE is unset; DMG is NOT notarized." >&2
+  fi
+else
+  echo "WARNING: ad hoc build. Downloads through a browser will be blocked by Gatekeeper;" >&2
+  echo "         scripts/install-macos.sh installs without that prompt." >&2
+fi
 (cd build/dist && shasum -a 256 "$(basename "$DMG")" > SHA256SUMS.txt)
 echo "$DMG"

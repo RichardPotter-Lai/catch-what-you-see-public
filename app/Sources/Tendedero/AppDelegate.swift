@@ -146,6 +146,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         setUpStatusItem()
         watchMenuBarClicks()
+        if !AppEnvironment.isDevelopment {
+            WelcomeGuide.runOnLaunch()
+        }
 
         // Hang on Tendedero, in the menu of images in Finder and other apps.
         let service = TextCaptureService { [weak self] text in
@@ -894,7 +897,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     case .keysStillHeld: reason = "请松开快捷键后重试。"
                     }
                 } else { switch error as? SelectionFailure {
-                case .permissionRequired: reason = "需要辅助功能权限，请从菜单打开系统设置授权。"
+                case .permissionRequired:
+                    reason = "需要辅助功能权限。"
+                    PermissionGuide.captureNeedsPermission()
                 case .emptySelection: reason = "当前没有选中文字。"
                 case .secureInput: reason = "安全输入状态下无法采集。"
                 case .sourceChanged: reason = "读取期间来源或选区变化，请重新选择。"
@@ -948,6 +953,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func setUpStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem.autosaveName = "CatchWhatYouSeeStatusItem"
+        // 用户曾按住 Command 把图标拖出菜单栏时，系统会记住隐藏状态；这里恢复显示。
+        statusItem.isVisible = true
         updateStatusIcon()
         let menu = NSMenu()
         menu.addItem(ClosureMenuItem("打开资料库…", key: "l") { [weak self] in self?.libraryController.show() })
@@ -966,11 +974,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let count = line.liveCount
         let description = "Catch what you see"
         let state = count == 0 ? L("The line is empty") : String(format: L("%d on the line"), count)
-        let image = NSImage(systemSymbolName: "tshirt",
-                            accessibilityDescription: "\(description), \(state)")
-        image?.isTemplate = true
+        // 使用和应用图标一致的便笺标志（模板图，自动适配浅色/深色菜单栏）。
+        // 以前用系统的 T 恤符号，而且绳上为空时变灰，别的 Mac 上几乎看不到。
+        let image = StatusIcon.image(filled: count > 0)
+        image.accessibilityDescription = "\(description), \(state)"
         statusItem.button?.image = image
-        statusItem.button?.appearsDisabled = count == 0
+        statusItem.button?.appearsDisabled = false
         statusItem.button?.toolTip = "\(description)\n\(state)"
     }
 
@@ -996,9 +1005,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(copyFallback)
         let feedback = NSMenuItem(title: libraryController.message.isEmpty ? "文字收藏：等待主动采集" : libraryController.message, action: nil, keyEquivalent: "")
         menu.addItem(feedback)
-        menu.addItem(ClosureMenuItem("辅助功能权限设置…") {
-            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
-        })
+        let permission = ClosureMenuItem(PermissionGuide.isTrusted ? "辅助功能权限：已授权" : "⚠︎ 授权辅助功能（Option+C 需要）…") {
+            PermissionGuide.explain(reason: .menu)
+        }
+        menu.addItem(permission)
 
 
         let clearItem = ClosureMenuItem(L("Take everything down")) { [weak self] in
