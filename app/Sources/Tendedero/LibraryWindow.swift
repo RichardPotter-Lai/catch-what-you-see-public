@@ -244,7 +244,7 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
                     }
                 } catch { cleanupFailed = true }
             }
-            message = cleanupFailed ? "笔记已移入回收站；关联截图未删完，请在临时列表重试。" : "已移入回收站。"
+            message = cleanupFailed ? "笔记已移入回收站；关联截图未删完，请在“未收藏截图”列表重试。" : "已移入回收站。"
             selected = nil; refresh()
         } catch { message = "未删除：文件已变化或存在冲突，请刷新后检查。"; refresh() }
     }
@@ -315,7 +315,7 @@ private struct LibraryView: View {
                 List(selection: $model.selected) {
                     if model.showingTemporary {
                         ForEach(model.temporaryItems) { item in
-                            Text((item.saved ? "已收藏 · " : "临时 · ") + item.createdAt).tag(item.id.uuidString)
+                            Text((item.saved ? "已收藏 · " : "未收藏 · ") + item.createdAt).tag(item.id.uuidString)
                         }
                     }
                     ForEach(model.showingTemporary ? [] : model.filtered) { entry in
@@ -330,7 +330,7 @@ private struct LibraryView: View {
                         if let url = model.temporaryURL(item), let image = NSImage(contentsOf: url) {
                             Image(nsImage: image).resizable().scaledToFit()
                         }
-                        Text(item.saved ? "已收藏，原临时副本保留" : "尚未收藏；不会自动过期")
+                        Text(item.saved ? "已收藏为笔记" : "尚未收藏；不会自动过期")
                         HStack {
                             Button("收藏为 Markdown") { model.collectTemporary(item.id) }.disabled(item.saved)
                             Button("重新挂上") { model.hangTemporary(item) }

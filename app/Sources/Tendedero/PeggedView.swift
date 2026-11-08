@@ -87,7 +87,10 @@ struct PeggedView: View {
             } else if let image = item.thumb {
                 Image(nsImage: image).resizable().interpolation(.high)
                     .overlay(alignment: .bottomTrailing) {
-                        Text(item.note == nil ? "临时" : "已收藏").font(.system(size: 9)).padding(3).background(.regularMaterial)
+                        // 普通截图不加角标；只有收藏成笔记的截图标“已收藏”。
+                        if item.note != nil {
+                            Text("已收藏").font(.system(size: 9)).padding(3).background(.regularMaterial)
+                        }
                     }
             }
         }
