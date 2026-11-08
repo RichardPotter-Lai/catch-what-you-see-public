@@ -74,7 +74,7 @@ struct GrabArea: NSViewRepresentable {
             menu.addItem(ClosureMenuItem("打开资料库…") { line.onOpenLibrary?() })
             menu.addItem(ClosureMenuItem("从晾衣绳收起（保留文件）") { line.discard(id) })
             if item.note != nil || item.temporaryID != nil {
-                let remove = ClosureMenuItem(item.note != nil ? "删除笔记" : "删除临时图片") { line.requestDeletion(id) }
+                let remove = ClosureMenuItem(item.note != nil ? "删除笔记" : "删除截图") { line.requestDeletion(id) }
                 remove.isEnabled = !item.readOnly && !item.falling && !item.held
                 menu.addItem(remove)
             }

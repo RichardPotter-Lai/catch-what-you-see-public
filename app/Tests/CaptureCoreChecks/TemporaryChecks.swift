@@ -86,6 +86,33 @@ func checkTemporary(_ root: URL) throws {
         fatalError("托管目录链接必须拒绝")
     } catch TemporaryStore.Failure.unsafePath { }
     try require(try Data(contentsOf: externalSource) == data && guardedStore.items().count == 1, "拒绝链接保留外部原件及临时记录")
+    // 未开启“接管截图”时收件箱目录不存在，删除不能因此失败；
+    // 带系统截图标记的原件（如桌面截图）一并移入废纸篓，普通外部图片保留。
+    let desktop = root.appendingPathComponent("fake-desktop")
+    try FileManager.default.createDirectory(at: desktop, withIntermediateDirectories: true)
+    let shot = desktop.appendingPathComponent("截屏 test.png")
+    try data.write(to: shot)
+    let flag: [UInt8] = [1]
+    try require(setxattr(shot.path, "com.apple.metadata:kMDItemIsScreenCapture", flag, flag.count, 0, 0) == 0, "测试截图标记写入")
+    let plain = desktop.appendingPathComponent("photo.png")
+    try data.write(to: plain)
+    let missingInbox = root.appendingPathComponent("never-created-inbox")
+    let shotStore = try TemporaryStore(root: root.appendingPathComponent("shot-clean-library"))
+    let shotItem = try shotStore.ingest(shot)
+    let plainItem = try shotStore.ingest(plain)
+    var shotTrashed: [String] = []
+    let shotTrash = root.appendingPathComponent("shot-trash")
+    try FileManager.default.createDirectory(at: shotTrash, withIntermediateDirectories: true)
+    for id in [shotItem.id, plainItem.id] {
+        try shotStore.clean(id, managedSourceDirectory: missingInbox, deleteScreenshotOriginals: true) {
+            shotTrashed.append($0.lastPathComponent)
+            try FileManager.default.moveItem(at: $0, to: shotTrash.appendingPathComponent(UUID().uuidString + $0.lastPathComponent))
+        }
+    }
+    try require(try shotStore.items().isEmpty && shotTrashed.count == 3, "收件箱不存在时仍可删除")
+    try require(!FileManager.default.fileExists(atPath: shot.path), "系统截图原件随删除进废纸篓")
+    try require(Data(contentsOf: plain) == data, "非截图的外部图片原件保留")
+    print("PASS: 未开启接管截图也能删除；桌面截图原件一并删除；普通图片原件保留")
     print("PASS: 明确删除包含应用截图原件/临时副本；图文回收后关联清理与恢复；外部原件保留")
     print("PASS: 临时图完整性/重复事件、无主动收藏无 MD、重启/幂等收藏、引用保护与手动清理")
 }

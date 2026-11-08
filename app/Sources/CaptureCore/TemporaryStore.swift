@@ -105,7 +105,7 @@ public final class TemporaryStore {
             return result
         }
     }
-    public func clean(_ id: UUID, managedSourceDirectory: URL? = nil, trash: (URL) throws -> Void) throws {
+    public func clean(_ id: UUID, managedSourceDirectory: URL? = nil, deleteScreenshotOriginals: Bool = false, trash: (URL) throws -> Void) throws {
         try locked {
             guard let item = try records().first(where: { $0.id == id }) else { throw Failure.missing }
             var verifiedPermanentCopy = false
@@ -125,23 +125,33 @@ public final class TemporaryStore {
             guard try MarkdownStore(root: root).pendingOperations().isEmpty else { throw Failure.unknownReferences }
             let asset = try url(for: item)
             guard SHA256.hash(data: try Data(contentsOf: asset)).map({ String(format: "%02x", $0) }).joined() == item.hash else { throw Failure.unknownReferences }
-            // Only the app-owned screenshot inbox may be cleaned with its copy.
-            // Imported external files, changed originals, symlinks and other records stay intact.
-            if let directory = managedSourceDirectory, item.sourceKey.hasSuffix(":" + item.hash) {
+            // 明确删除截图时，截图原件一并移入废纸篓，而不只是删除库内副本：
+            // - 应用自己的截图收件箱（“接管截图”开启时）中的原件；
+            // - 带有 macOS 截图标记（kMDItemIsScreenCapture）的原件，例如桌面上的“截屏…png”。
+            // 手动挂上的外部图片、已被修改的原件、符号链接和其他记录引用的原件保持不动。
+            if item.sourceKey.hasSuffix(":" + item.hash) {
                 let source = URL(fileURLWithPath: String(item.sourceKey.dropLast(item.hash.count + 1)))
-                var component = directory.standardizedFileURL
-                while component.path != "/" {
-                    let link = try component.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true
-                    guard !link || ["/var", "/tmp", "/etc"].contains(component.path) else { throw Failure.unsafePath }
-                    component.deleteLastPathComponent()
+                var inInbox = false
+                // 收件箱目录只在开启“接管截图”后才存在；不存在时不能阻止删除。
+                if let directory = managedSourceDirectory, fm.fileExists(atPath: directory.path) {
+                    var component = directory.standardizedFileURL
+                    while component.path != "/" {
+                        let link = try component.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true
+                        guard !link || ["/var", "/tmp", "/etc"].contains(component.path) else { throw Failure.unsafePath }
+                        component.deleteLastPathComponent()
+                    }
+                    inInbox = source.deletingLastPathComponent() == directory.standardizedFileURL.resolvingSymlinksInPath()
                 }
-                let owned = directory.standardizedFileURL.resolvingSymlinksInPath()
-                if source.deletingLastPathComponent() == owned,
+                let isSystemScreenshot = deleteScreenshotOriginals
+                    && getxattr(source.path, "com.apple.metadata:kMDItemIsScreenCapture", nil, 0, 0, XATTR_NOFOLLOW) >= 0
+                if inInbox || isSystemScreenshot,
                    source.resolvingSymlinksInPath() == source,
                    source != asset, fm.fileExists(atPath: source.path),
                    !(try records()).contains(where: { $0.id != id && $0.sourceKey == item.sourceKey }) {
-                    guard SHA256.hash(data: try Data(contentsOf: source)).map({ String(format: "%02x", $0) }).joined() == item.hash else { throw Failure.unknownReferences }
-                    try trash(source)
+                    let unchanged = SHA256.hash(data: try Data(contentsOf: source)).map({ String(format: "%02x", $0) }).joined() == item.hash
+                    if unchanged { try trash(source) }
+                    else if inInbox { throw Failure.unknownReferences }
+                    // 桌面截图原件被改过：保留原件，只删除库内副本。
                 }
             }
             try trash(asset)

@@ -183,13 +183,14 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
                     message = "未删除：卡片不属于当前资料库，请切回原资料库。"; return
                 }
             }
-            try store.clean(id, managedSourceDirectory: AppEnvironment.isDevelopment ? nil : Inbox.folder) { url in
+            try store.clean(id, managedSourceDirectory: AppEnvironment.isDevelopment ? nil : Inbox.folder,
+                                                   deleteScreenshotOriginals: !AppEnvironment.isDevelopment) { url in
                 if let trash { try trash(url) }
                 else { try FileManager.default.trashItem(at: url, resultingItemURL: nil) }
             }
             onCleanedTemporary?(id, assetURL)
-            message = "已移入回收站。"; selected = nil; refresh()
-        } catch { message = "未清理：图片已有引用、引用无法确定或文件发生变化。" }
+            message = "截图已删除（原件已移到废纸篓）。"; selected = nil; refresh()
+        } catch { message = "未删除：截图已被收藏为笔记或文件发生变化，请在资料库中处理。" }
     }
     func hangTemporary(_ item: TemporaryStore.Item) {
         if item.saved {
@@ -235,14 +236,15 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
                     let temporaryStore = try TemporaryStore(root: root)
                     for item in try temporaryStore.items() where item.noteID == id {
                         let url = try temporaryStore.url(for: item)
-                        try temporaryStore.clean(item.id, managedSourceDirectory: AppEnvironment.isDevelopment ? nil : Inbox.folder) {
+                        try temporaryStore.clean(item.id, managedSourceDirectory: AppEnvironment.isDevelopment ? nil : Inbox.folder,
+                                                   deleteScreenshotOriginals: !AppEnvironment.isDevelopment) {
                             try FileManager.default.trashItem(at: $0, resultingItemURL: nil)
                         }
                         onCleanedTemporary?(item.id, url)
                     }
                 } catch { cleanupFailed = true }
             }
-            message = cleanupFailed ? "笔记已移入回收站；关联临时图片未删完，请在临时列表重试。" : "已移入回收站。"
+            message = cleanupFailed ? "笔记已移入回收站；关联截图未删完，请在临时列表重试。" : "已移入回收站。"
             selected = nil; refresh()
         } catch { message = "未删除：文件已变化或存在冲突，请刷新后检查。"; refresh() }
     }
@@ -293,7 +295,7 @@ private struct LibraryView: View {
         VStack(spacing: 0) {
             HStack {
                 TextField("搜索标题、摘录、备注或出处", text: $model.query).textFieldStyle(.roundedBorder)
-                Toggle("临时图片", isOn: $model.showingTemporary).toggleStyle(.button)
+                Toggle("未收藏截图", isOn: $model.showingTemporary).toggleStyle(.button)
                 Button("添加图片…") { model.importTemporary() }
                 Toggle("回收站", isOn: $model.showingTrash).toggleStyle(.button)
                 Button("刷新") { model.refresh() }
@@ -332,7 +334,7 @@ private struct LibraryView: View {
                         HStack {
                             Button("收藏为 Markdown") { model.collectTemporary(item.id) }.disabled(item.saved)
                             Button("重新挂上") { model.hangTemporary(item) }
-                            Button("删除临时图片") { model.cleanTemporary(item.id) }
+                            Button("删除截图") { model.cleanTemporary(item.id) }
                         }
                     } else if let entry = model.selection {
                         Text(entry.note?.title ?? entry.url.lastPathComponent).font(.title2)

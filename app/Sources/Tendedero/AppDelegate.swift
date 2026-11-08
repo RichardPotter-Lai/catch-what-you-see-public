@@ -142,7 +142,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         line.onCleanTemporary = { [weak self] id, url in
             guard let self else { return }
             self.libraryController.cleanTemporary(id, expectedURL: url)
-            CaptureFeedback.shared.show(title: "删除临时图片", detail: self.libraryController.message)
+            CaptureFeedback.shared.show(title: "删除截图", detail: self.libraryController.message)
         }
         setUpStatusItem()
         watchMenuBarClicks()

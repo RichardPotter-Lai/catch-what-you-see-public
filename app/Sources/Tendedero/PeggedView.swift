@@ -144,8 +144,8 @@ struct PeggedView: View {
                     .buttonStyle(.plain)
                     .padding(3)
                     .disabled(item.readOnly || item.falling || item.held)
-                    .help(item.note != nil ? "删除笔记（可从资料库回收站恢复）" : "删除临时图片（保留外部原件）")
-                    .accessibilityLabel(item.note != nil ? "删除笔记" : "删除临时图片")
+                    .help(item.note != nil ? "删除笔记（可从资料库回收站恢复）" : "删除截图（截图原件一并移到废纸篓）")
+                    .accessibilityLabel(item.note != nil ? "删除笔记" : "删除截图")
                 }
             }
             .overlay(alignment: .bottom) {
