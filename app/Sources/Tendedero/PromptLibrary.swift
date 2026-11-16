@@ -311,17 +311,42 @@ private struct PromptPopoverRootView: View {
     @ObservedObject var controller: PromptController
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
         PromptBrowserView(
             controller: controller,
             isPopover: true,
             onClose: { controller.hidePanel() }
         )
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.ultraThinMaterial, in: shape)
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.28), lineWidth: 0.75)
+            shape
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.14), Color.white.opacity(0.02), .clear],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .allowsHitTesting(false)
         )
-        .padding(6)
+        .overlay(
+            shape.stroke(
+                LinearGradient(
+                    colors: [Color.white.opacity(0.60), Color.white.opacity(0.14)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                lineWidth: 0.85
+            )
+            .allowsHitTesting(false)
+        )
+        .overlay(
+            shape.stroke(Color.black.opacity(0.14), lineWidth: 0.5)
+                .padding(-0.5)
+                .allowsHitTesting(false)
+        )
+        .clipShape(shape)
+        .padding(8)
     }
 }
 
@@ -335,17 +360,17 @@ struct PromptBrowserView: View {
     @State private var showingCategoryManager = false
 
     private let columns = [
-        GridItem(.adaptive(minimum: 220, maximum: 360), spacing: 12)
+        GridItem(.adaptive(minimum: 226, maximum: 360), spacing: 12)
     ]
 
     var body: some View {
         VStack(spacing: 0) {
             headerBar
-            Divider()
+            glassDivider
             categoryBar
-            Divider()
+            glassDivider
             contentGrid
-            Divider()
+            glassDivider
             footerBar
         }
         .sheet(item: $editingTarget) { draft in
@@ -377,20 +402,46 @@ struct PromptBrowserView: View {
         }
     }
 
+    private var glassDivider: some View {
+        Rectangle()
+            .fill(Color.white.opacity(0.14))
+            .frame(height: 0.5)
+    }
+
     private var headerBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkles.rectangle.stack")
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.tint)
+                .foregroundStyle(.primary)
             Text("Prompt 提示词库")
-                .font(.headline)
+                .font(.system(size: 14, weight: .semibold))
 
-            TextField("搜索标题、内容或分类", text: $controller.searchQuery)
-                .textFieldStyle(.roundedBorder)
-                .frame(minWidth: 160, maxWidth: 260)
-                .simultaneousGesture(TapGesture().onEnded {
-                    if isPopover { controller.activateForInput() }
-                })
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                TextField("搜索标题、内容或分类", text: $controller.searchQuery)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12.5))
+                if !controller.searchQuery.isEmpty {
+                    Button {
+                        controller.searchQuery = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5.5)
+            .background(Color.white.opacity(0.08), in: Capsule())
+            .overlay(Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.6))
+            .frame(minWidth: 170, maxWidth: 260)
+            .simultaneousGesture(TapGesture().onEnded {
+                if isPopover { controller.activateForInput() }
+            })
 
             Spacer()
 
@@ -404,6 +455,7 @@ struct PromptBrowserView: View {
                 editingTarget = PromptEditorDraft(category: defaultCategory, badge: defaultBadge)
             } label: {
                 Label("新建 Prompt", systemImage: "plus")
+                    .font(.system(size: 12, weight: .medium))
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
@@ -412,6 +464,7 @@ struct PromptBrowserView: View {
                 if isPopover { controller.activateForInput() }
                 showingCategoryManager = true
             }
+            .buttonStyle(.bordered)
             .controlSize(.small)
 
             Button {
@@ -419,6 +472,7 @@ struct PromptBrowserView: View {
             } label: {
                 Image(systemName: "folder")
             }
+            .buttonStyle(.bordered)
             .help("在访达中打开 Prompts 文件夹")
             .controlSize(.small)
 
@@ -427,14 +481,15 @@ struct PromptBrowserView: View {
                     onClose()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .help("关闭 (Esc)")
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 
     private var categoryBar: some View {
@@ -542,17 +597,30 @@ private struct CategoryPill: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Text(title)
+                    .lineLimit(1)
                 Text("\(count)")
-                    .font(.caption2)
+                    .font(.caption2.monospacedDigit())
                     .foregroundStyle(selected ? .white.opacity(0.85) : .secondary)
             }
-            .font(.system(size: 12, weight: selected ? .semibold : .regular))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .fixedSize(horizontal: true, vertical: false)
+            .font(.system(size: 12, weight: selected ? .semibold : .medium))
+            .padding(.horizontal, 11)
+            .padding(.vertical, 5.5)
             .background(
-                Capsule().fill(selected ? activeColor : (accentOverride?.opacity(0.12) ?? Color.primary.opacity(0.07)))
+                Capsule().fill(
+                    selected
+                        ? activeColor
+                        : (accentOverride?.opacity(0.14) ?? Color.white.opacity(0.09))
+                )
+            )
+            .overlay(
+                Capsule().strokeBorder(
+                    selected ? Color.white.opacity(0.32) : Color.white.opacity(0.16),
+                    lineWidth: 0.6
+                )
             )
             .foregroundStyle(selected ? .white : (accentOverride ?? .primary))
+            .shadow(color: selected ? activeColor.opacity(0.35) : .clear, radius: 6, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -567,10 +635,13 @@ private struct PromptBadgePill: View {
                 .font(.system(size: 8))
             Text(text)
                 .font(.system(size: 10, weight: .semibold))
+                .lineLimit(1)
         }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 2)
-        .background(Color.orange.opacity(0.16), in: Capsule())
+        .fixedSize(horizontal: true, vertical: false)
+        .padding(.horizontal, 7.5)
+        .padding(.vertical, 2.5)
+        .background(Color.orange.opacity(0.18), in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.orange.opacity(0.35), lineWidth: 0.5))
         .foregroundStyle(Color.orange)
     }
 }
@@ -586,77 +657,156 @@ private struct PromptCardView: View {
 
     @State private var hovering = false
 
+    private var activeBorder: Bool { hovering || copied }
+
     var body: some View {
+        let cardShape = RoundedRectangle(cornerRadius: 15, style: .continuous)
         VStack(alignment: .leading, spacing: 8) {
+            // 顶部胶囊锁死单行，不与悬停按钮抢占空间，保证文字行列零变化。
             HStack(spacing: 6) {
                 Text(item.category)
                     .font(.system(size: 10, weight: .medium))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.12), in: Capsule())
-                    .foregroundStyle(Color.accentColor)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.horizontal, 7.5)
+                    .padding(.vertical, 2.5)
+                    .background(Color.white.opacity(0.10), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Color.white.opacity(0.16), lineWidth: 0.5))
+                    .foregroundStyle(.primary.opacity(0.88))
 
                 if let badge = item.badge {
                     PromptBadgePill(text: badge)
                 }
 
-                Spacer()
-
-                if hovering {
-                    HStack(spacing: 4) {
-                        CardIconButton(systemName: "pin", help: "挂到顶部晾衣绳", action: onHang)
-                        CardIconButton(systemName: "eye", help: "查看全文", action: onPreview)
-                        CardIconButton(systemName: "pencil", help: "编辑 Prompt", action: onEdit)
-                        CardIconButton(systemName: "trash", help: "删除 Prompt", action: onDelete)
-                    }
-                    .transition(.opacity)
-                }
+                Spacer(minLength: 0)
             }
+            .frame(height: 20)
 
             Text(item.title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 13.5, weight: .semibold))
                 .lineLimit(1)
 
             Text(item.content)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
+                .lineSpacing(2)
                 .lineLimit(4)
-                .frame(maxWidth: .infinity, minHeight: 54, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: 68, maxHeight: 68, alignment: .topLeading)
 
-            HStack {
-                Text("\(item.content.count) 字")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                Spacer()
+            HStack(spacing: 6) {
                 if copied {
                     Label("已复制", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.green)
                 } else {
-                    Text(hovering ? "点击复制" : "")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
+                    Text(hovering ? "点击卡片复制" : "\(item.content.count) 字")
+                        .font(.system(size: 10.5, weight: hovering ? .medium : .regular))
+                        .foregroundStyle(hovering ? AnyShapeStyle(.primary.opacity(0.85)) : AnyShapeStyle(.tertiary))
                 }
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 4) {
+                    CardIconButton(systemName: "pin", help: "挂到顶部晾衣绳", action: onHang)
+                    CardIconButton(systemName: "eye", help: "查看全文", action: onPreview)
+                    CardIconButton(systemName: "pencil", help: "编辑 Prompt", action: onEdit)
+                    CardIconButton(systemName: "trash", help: "删除 Prompt", action: onDelete)
+                }
+                .opacity(hovering ? 1 : 0)
+                .allowsHitTesting(hovering)
             }
+            .frame(height: 22)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
+        .padding(13)
+        .background(.ultraThinMaterial, in: cardShape)
+        .overlay(
+            cardShape
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(hovering ? 0.16 : 0.08),
+                            Color.white.opacity(hovering ? 0.05 : 0.01)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .allowsHitTesting(false)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            cardShape
                 .strokeBorder(
-                    hovering ? Color.accentColor.opacity(0.65)
-                        : (item.badge != nil ? Color.orange.opacity(0.32) : Color.primary.opacity(0.10)),
-                    lineWidth: hovering ? 1.2 : 0.8
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(activeBorder ? 0.45 : 0.28),
+                            Color.white.opacity(0.06)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 0.75
                 )
+                .allowsHitTesting(false)
         )
-        .shadow(color: .black.opacity(hovering ? 0.08 : 0.03), radius: hovering ? 6 : 2, y: 2)
-        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            Group {
+                if activeBorder {
+                    ShimmerBorderOverlay(
+                        cornerRadius: 15,
+                        copied: copied,
+                        isFeatured: item.badge != nil
+                    )
+                } else if item.badge != nil {
+                    cardShape
+                        .strokeBorder(Color.orange.opacity(0.28), lineWidth: 0.85)
+                }
+            }
+            .allowsHitTesting(false)
+        )
+        .shadow(color: .black.opacity(hovering ? 0.16 : 0.06), radius: hovering ? 10 : 3, y: hovering ? 4 : 1.5)
+        .scaleEffect(hovering ? 1.012 : 1.0)
+        .contentShape(cardShape)
         .onTapGesture(perform: onCopy)
         .onHover { hovering = $0 }
-        .animation(.easeOut(duration: 0.14), value: hovering)
+        .animation(.spring(response: 0.24, dampingFraction: 0.82), value: hovering)
+        .animation(.easeOut(duration: 0.18), value: copied)
+    }
+}
+
+private struct ShimmerBorderOverlay: View {
+    let cornerRadius: CGFloat
+    let copied: Bool
+    let isFeatured: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var angle: Double = 0
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        let colors: [Color] = copied
+            ? [Color.green, Color.mint, Color.white.opacity(0.95), Color.green.opacity(0.55), Color.green]
+            : (isFeatured
+                ? [Color.orange.opacity(0.95), Color.white, Color.yellow.opacity(0.85), Color.cyan.opacity(0.65), Color.orange.opacity(0.95)]
+                : [Color.white, Color.cyan.opacity(0.85), Color.indigo.opacity(0.65), Color.purple.opacity(0.55), Color.white])
+        let glowColor: Color = copied ? .green : (isFeatured ? .orange : .cyan)
+
+        shape
+            .strokeBorder(
+                AngularGradient(
+                    gradient: Gradient(colors: colors),
+                    center: .center,
+                    angle: .degrees(angle)
+                ),
+                lineWidth: 1.5
+            )
+            .shadow(color: glowColor.opacity(0.38), radius: 6)
+            .onAppear {
+                guard !reduceMotion else { return }
+                angle = 0
+                withAnimation(.linear(duration: 2.8).repeatForever(autoreverses: false)) {
+                    angle = 360
+                }
+            }
     }
 }
 
@@ -669,8 +819,10 @@ private struct CardIconButton: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 10, weight: .semibold))
-                .frame(width: 20, height: 20)
-                .background(Color.primary.opacity(0.07), in: Circle())
+                .foregroundStyle(.primary.opacity(0.88))
+                .frame(width: 22, height: 22)
+                .background(Color.white.opacity(0.14), in: Circle())
+                .overlay(Circle().strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5))
         }
         .buttonStyle(.plain)
         .help(help)
