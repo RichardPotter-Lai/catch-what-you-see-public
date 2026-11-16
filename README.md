@@ -5,7 +5,7 @@
 <h1 align="center">Catch what you see</h1>
 
 <p align="center">
-  基于 <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a> 打造的 macOS 工具：支持 <strong>Option+C</strong> 划词收藏、本地 Markdown 笔记、无限滚轮晾衣绳，以及 <strong>Option+P</strong> 苹果液态玻璃 Prompt 分类卡片库。
+  基于 <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a> 打造的 macOS 工具：支持 <strong>Option+C</strong> 划词收藏、本地 Markdown 笔记、无限滚轮晾衣绳，以及 <strong>Option+P</strong> Prompt 分类卡片库。
 </p>
 
 <p align="center">
@@ -61,7 +61,7 @@
 
 - Option+C 收藏选中文字，以及受控复制后备和剪贴板收藏入口。
 - 文字便笺、Markdown 文件保存，以及本地搜索、预览和外部编辑刷新。
-- **Prompt 分类卡片墙**（`Option+P` / 菜单栏呼出）：苹果液态玻璃面板，内置 25 条常用 Prompt（含 10 条「★ 卡兹克精选」），支持分类管理、自由新增编辑与一键复制。
+- **Prompt 分类卡片墙**（`Option+P` / 菜单栏呼出）：悬浮卡片面板，内置 25 条常用 Prompt（含 10 条「★ 卡兹克精选」），支持分类管理、自由新增编辑与一键复制。
 - **晾衣绳无限滚动浏览**：超出屏幕显示数量不会自动掉下绳子，支持鼠标滚轮顺滑回划查看历史卡片。
 - 文字与图片共用的删除、回收和恢复流程。
 

@@ -2,7 +2,7 @@
 
 <h1 align="center">Catch what you see</h1>
 
-<p align="center">Based on <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a>, adding <strong>Option+C</strong> text collection, local Markdown notes, unlimited scroll-wheel clothesline, and an <strong>Option+P</strong> Apple liquid-glass Prompt Card Library.</p>
+<p align="center">Based on <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a>, adding <strong>Option+C</strong> text collection, local Markdown notes, unlimited scroll-wheel clothesline, and an <strong>Option+P</strong> Prompt Card Library.</p>
 
 <p align="center"><a href="../../README.md">中文版</a> · <strong>English</strong></p>
 
@@ -17,7 +17,7 @@ Tendedero hangs screenshots on a clothesline at the top of the screen. I liked t
 
 Select text, then press and release **Option+C**. Catch saves a local Markdown note and hangs a preview on the clothesline. Move the pointer to the middle of the menu bar, or press **Control+Option+T**, to bring it down (scroll with your mouse wheel when items exceed the screen). Click a text note to copy its excerpt; double-click to open the MD file.
 
-Press **Option+P** (or click **Prompt 提示词库…** in the menu bar) to open the liquid-glass Prompt board, filter by category, create/edit custom prompts, and click any card to copy immediately.
+Press **Option+P** (or click **Prompt 提示词库…** in the menu bar) to open the floating Prompt board, filter by category, create/edit custom prompts, and click any card to copy immediately.
 
 Screenshots use the usual macOS shortcuts. They stay temporary until you choose to collect them. Hiding a card or filling the line does not delete its file.
 
