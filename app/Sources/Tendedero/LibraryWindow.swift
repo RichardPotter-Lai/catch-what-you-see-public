@@ -8,13 +8,19 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
     @Published var temporaryItems: [TemporaryStore.Item] = []
     @Published var showingTemporary = false { didSet {
         guard oldValue != showingTemporary else { return }
-        if showingTemporary && showingTrash { showingTrash = false }
+        if showingTemporary { showingTrash = false; showingPrompts = false }
         selected = nil; refresh()
+    } }
+    @Published var showingPrompts = false { didSet {
+        guard oldValue != showingPrompts else { return }
+        if showingPrompts { showingTemporary = false; showingTrash = false }
+        selected = nil
+        if showingPrompts { promptController.refresh() }
     } }
     @Published var query = ""
     @Published var showingTrash = false { didSet {
         guard oldValue != showingTrash else { return }
-        if showingTrash && showingTemporary { showingTemporary = false }
+        if showingTrash { showingTemporary = false; showingPrompts = false }
         selected = nil; refresh()
     } }
     @Published var selected: String?
@@ -23,6 +29,7 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
     @Published private(set) var screenshotCaptureEnabled = false
     @Published private(set) var showOverFullScreen = false
     @Published private(set) var root: URL
+    let promptController: PromptController
     private var index: LibraryIndex
     private var window: NSWindow?
     private var watcher: DispatchSourceFileSystemObject?
@@ -41,6 +48,7 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
 
     init(root: URL) {
         self.root = root
+        self.promptController = PromptController(root: root)
         self.index = LibraryIndex(root: root)
         super.init()
     }
@@ -100,9 +108,10 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
             } else if pendingCount != 0 { pendingCount = 0 }
         } catch { message = "无法读取资料库，请检查文件夹是否仍可访问。" }
     }
-    @discardableResult func capture(_ text: String, sourceApp: String = "", sourceURL: String = "") throws -> MarkdownStore.Saved {
+    @discardableResult func capture(_ text: String, title explicitTitle: String? = nil, sourceApp: String = "", sourceURL: String = "") throws -> MarkdownStore.Saved {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw SelectionFailure.emptySelection }
-        let title = String(text.components(separatedBy: .newlines).first?.prefix(70) ?? "文字笔记".prefix(70))
+        let fallbackTitle = String(text.components(separatedBy: .newlines).first?.prefix(70) ?? "文字笔记".prefix(70))
+        let title = (explicitTitle?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? fallbackTitle
         let note = MarkdownNote(id: UUID(), operationID: UUID(), createdAt: ISO8601DateFormatter().string(from: Date()), title: title, excerpt: text, sourceApp: sourceApp, sourceURL: sourceURL)
         do {
             let result = try MarkdownStore(root: root).save(note)
@@ -136,6 +145,7 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         root = url
         index = LibraryIndex(root: url)
+        promptController.switchRoot(to: url)
         selected = nil
         AppEnvironment.preferences.set(url.path, forKey: "libraryPath")
         refresh(); startWatching()
@@ -291,14 +301,19 @@ final class LibraryController: NSObject, ObservableObject, NSWindowDelegate {
 
 private struct LibraryView: View {
     @ObservedObject var model: LibraryController
+    @State private var promptDraft: PromptEditorDraft?
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 TextField("搜索标题、摘录、备注或出处", text: $model.query).textFieldStyle(.roundedBorder)
+                Toggle("Prompt 词库", isOn: $model.showingPrompts).toggleStyle(.button)
                 Toggle("未收藏截图", isOn: $model.showingTemporary).toggleStyle(.button)
                 Button("添加图片…") { model.importTemporary() }
                 Toggle("回收站", isOn: $model.showingTrash).toggleStyle(.button)
-                Button("刷新") { model.refresh() }
+                Button("刷新") {
+                    if model.showingPrompts { model.promptController.refresh() }
+                    else { model.refresh() }
+                }
                 Button("显示晾衣绳") { model.onRevealLine?() }.disabled(model.onRevealLine == nil)
                 Button("选择资料库…") { model.chooseLibrary() }
                 if AppEnvironment.isDevelopment { Button("生成示例") { model.addSample() } }
@@ -311,6 +326,10 @@ private struct LibraryView: View {
                 Spacer()
                 Toggle("全屏应用中显示晾衣绳", isOn: Binding(get: { model.showOverFullScreen }, set: { model.onToggleFullScreen?($0) }))
             }.padding(.horizontal).padding(.bottom, 8)
+            if model.showingPrompts {
+                Divider()
+                PromptBrowserView(controller: model.promptController)
+            } else {
             HSplitView {
                 List(selection: $model.selected) {
                     if model.showingTemporary {
@@ -361,6 +380,12 @@ private struct LibraryView: View {
                         HStack {
                             Button("打开 Markdown") { model.openSelected() }.disabled(model.showingTrash)
                             Button("复制摘录") { model.copySelected() }.disabled(entry.state != .ready || entry.note?.attachment != nil)
+                            if !model.showingTrash, entry.state == .ready, let note = entry.note, note.attachment == nil {
+                                Button("存为 Prompt…") {
+                                    let category = model.promptController.categories.first ?? PromptStore.defaultCategoryFallback
+                                    promptDraft = PromptEditorDraft(category: category, title: note.title, content: note.excerpt)
+                                }
+                            }
                             if model.showingTrash {
                                 Button("恢复笔记") { model.restoreSelected() }.disabled(entry.state != .ready)
                             } else {
@@ -382,7 +407,19 @@ private struct LibraryView: View {
                 if model.pendingCount > 0 { Button("恢复 \(model.pendingCount) 条草稿") { model.recover() } }
                 Text("\(model.showingTemporary ? model.temporaryItems.count : model.entries.count) 条记录").foregroundStyle(.secondary)
             }.padding(10)
+            }
         }.frame(minWidth: 720, minHeight: 420)
+        .sheet(item: $promptDraft) { draft in
+            PromptEditorSheet(
+                draft: draft,
+                categories: model.promptController.categories,
+                onSave: { title, category, badge, content in
+                    let ok = model.promptController.savePrompt(title: title, category: category, badge: badge, content: content)
+                    if ok { model.message = "已存入 Prompt 词库：\(title)" }
+                    return ok
+                }
+            )
+        }
     }
     private func label(_ state: LibraryIndex.State) -> String {
         switch state {

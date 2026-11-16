@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var signalSources: [DispatchSourceSignal] = []
     private var hotKey: HotKey?
     private var captureKey: HotKey?
+    private var promptKey: HotKey?
     private var captureBusy = false
     private var documentTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
@@ -95,8 +96,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         clipboardWatcher = ClipboardWatcher { [weak self] url in self?.hangCapture(url) }
         // 不启动被动剪贴板历史。
 
-        if !AppEnvironment.isDevelopment { registerShortcut(); registerCaptureShortcut() }
-        else if CommandLine.arguments.contains("--enable-capture-hotkey") { registerCaptureShortcut() }
+        if !AppEnvironment.isDevelopment { registerShortcut(); registerCaptureShortcut(); registerPromptShortcut() }
+        else {
+            if CommandLine.arguments.contains("--enable-capture-hotkey") { registerCaptureShortcut() }
+            if CommandLine.arguments.contains("--enable-prompt-hotkey") { registerPromptShortcut() }
+        }
 
         documentTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -122,6 +126,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         libraryController.onSaved = { [weak self] saved in
             guard let self else { return }; _ = self.line.hang(saved.url); self.comeDown(on: nil)
+        }
+        libraryController.promptController.onHangPrompt = { [weak self] prompt in
+            guard let self else { return }
+            do {
+                _ = try self.libraryController.capture(prompt.content, title: prompt.title, sourceApp: "Prompt · \(prompt.category)")
+                CaptureFeedback.shared.show(title: "已挂上晾衣绳", detail: prompt.title)
+            } catch {
+                CaptureFeedback.shared.show(title: "未能挂上晾衣绳", detail: self.libraryController.message)
+            }
         }
         libraryController.onHang = { [weak self] entry in
             guard let self else { return }; _ = self.line.hang(entry.url); self.comeDown(on: nil)
@@ -184,10 +197,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self.comeDown(on: nil)
         }
         panel.onScroll = { [weak self] event in
-            // Sideways on a trackpad, or the wheel of a mouse.
-            let delta = abs(event.scrollingDeltaX) >= abs(event.scrollingDeltaY)
-                ? event.scrollingDeltaX : event.scrollingDeltaY
-            self?.line.scroll(by: event.hasPreciseScrollingDeltas ? delta : delta * 12)
+            let horizontal = abs(event.scrollingDeltaX) >= abs(event.scrollingDeltaY)
+            let delta: CGFloat
+            if horizontal {
+                delta = event.scrollingDeltaX
+            } else {
+                // 物理滚轮向下（pull toward user）统一为正值：向左划回看更早的卡片；向上滚回到最新。
+                delta = event.isDirectionInvertedFromDevice ? event.scrollingDeltaY : -event.scrollingDeltaY
+            }
+            self?.line.scroll(by: event.hasPreciseScrollingDeltas ? delta : delta * 18)
         }
         line.onFall = { [weak self] item in self?.fall(item) }
         line.onHold = { [weak self] id in self?.hold(id) }
@@ -694,7 +712,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         var overPhoto = line.hitRects.values.contains { $0.insetBy(dx: -4, dy: -4).contains(flipped) }
         // A line longer than the screen also takes the band the photos hang
         // in, gaps included, so a swipe anywhere along it moves it.
-        if !overPhoto, line.items.count > line.visibleCount, Line.keepOnLine != nil {
+        if !overPhoto, line.items.count > line.visibleCount {
             let band = line.hitRects.values.reduce(CGRect.null) { $0.union($1) }
             overPhoto = !band.isNull && flipped.y >= band.minY - 4 && flipped.y <= band.maxY + 4
         }
@@ -836,22 +854,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Shortcut.current = shortcut
         }
     }
+    private func loadShortcut(forKey key: String, fallback: Shortcut) -> Shortcut? {
+        guard let value = AppEnvironment.preferences.dictionary(forKey: key) else { return fallback }
+        guard let code = value["keyCode"] as? Int, let modifiers = value["modifiers"] as? UInt, let name = value["key"] as? String else { return nil }
+        return Shortcut(keyCode: code, modifiers: NSEvent.ModifierFlags(rawValue: modifiers), key: name)
+    }
+    private func saveShortcut(_ shortcut: Shortcut?, forKey key: String) {
+        AppEnvironment.preferences.set(shortcut.map { ["keyCode": $0.keyCode, "modifiers": $0.modifiers.rawValue, "key": $0.key] as [String: Any] } ?? [:], forKey: key)
+    }
     private var captureShortcut: Shortcut? {
-        get {
-            guard let value = AppEnvironment.preferences.dictionary(forKey: "captureShortcut") else {
-                return Shortcut.captureStandard
-            }
-            guard let code = value["keyCode"] as? Int, let modifiers = value["modifiers"] as? UInt, let key = value["key"] as? String else { return nil }
-            return Shortcut(keyCode: code, modifiers: NSEvent.ModifierFlags(rawValue: modifiers), key: key)
-        }
-        set {
-            AppEnvironment.preferences.set(newValue.map { ["keyCode": $0.keyCode, "modifiers": $0.modifiers.rawValue, "key": $0.key] as [String: Any] } ?? [:], forKey: "captureShortcut")
-        }
+        get { loadShortcut(forKey: "captureShortcut", fallback: .captureStandard) }
+        set { saveShortcut(newValue, forKey: "captureShortcut") }
+    }
+    private var promptShortcut: Shortcut? {
+        get { loadShortcut(forKey: "promptShortcut", fallback: .promptStandard) }
+        set { saveShortcut(newValue, forKey: "promptShortcut") }
     }
     private func registerCaptureShortcut() {
         guard let shortcut = captureShortcut else { return }
         captureKey = HotKey(shortcut) { [weak self] in self?.captureSelection() }
         if captureKey == nil { libraryController.message = "收藏快捷键无法注册，请修改组合或使用文本服务。" }
+    }
+    private func registerPromptShortcut() {
+        promptKey = nil
+        guard let shortcut = promptShortcut else { return }
+        promptKey = HotKey(shortcut) { [weak self] in self?.libraryController.promptController.togglePanel() }
     }
     private func changeCaptureShortcut() {
         captureKey?.suspended = true
@@ -865,6 +892,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 self.libraryController.message = "组合已被占用，旧收藏快捷键仍有效。可改组合或使用文本服务。"; NSSound.beep(); return
             }
             self.captureKey = replacement; self.captureShortcut = shortcut
+        }
+    }
+    private func changePromptShortcut() {
+        promptKey?.suspended = true
+        ShortcutRecorder.shared.record { [weak self] result in
+            guard let self else { return }
+            defer { self.promptKey?.suspended = false }
+            guard let result else { return }
+            guard let shortcut = result else { self.promptKey = nil; self.promptShortcut = nil; return }
+            if shortcut == self.promptShortcut && self.promptKey != nil { return }
+            guard let replacement = HotKey(shortcut, action: { [weak self] in self?.libraryController.promptController.togglePanel() }) else {
+                self.libraryController.message = "组合已被占用，旧 Prompt 快捷键仍有效。"; NSSound.beep(); return
+            }
+            self.promptKey = replacement; self.promptShortcut = shortcut
         }
     }
     private func captureSelection() {
@@ -946,7 +987,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let usable = panel.frame.width - 200
         let fits = max(3, min(12, Int(usable / Layout.spacing)))
         line.visibleCount = fits
-        line.maxItems = max(fits, Line.keepOnLine ?? fits)
+        line.maxItems = Line.keepOnLine
     }
 
     // MARK: Menu bar
@@ -986,6 +1027,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
+        let promptPanelItem = ClosureMenuItem("Prompt 提示词库…") { [weak self] in
+            self?.libraryController.promptController.togglePanel()
+        }
+        if let shortcut = promptShortcut, shortcut.key.count == 1 {
+            promptPanelItem.keyEquivalent = shortcut.key
+            promptPanelItem.keyEquivalentModifierMask = shortcut.modifiers
+        }
+        menu.addItem(promptPanelItem)
+        menu.addItem(ClosureMenuItem("打开资料库…", key: "l") { [weak self] in self?.libraryController.show() })
+        menu.addItem(.separator())
+
         let toggleItem = ClosureMenuItem(isRevealed ? L("Hide line") : L("Show line")) { [weak self] in
             self?.toggle()
         }
@@ -995,6 +1047,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         menu.addItem(toggleItem)
         menu.addItem(ClosureMenuItem("收藏快捷键：" + (captureShortcut?.display ?? "未设置")) { [weak self] in self?.changeCaptureShortcut() })
+        menu.addItem(ClosureMenuItem("Prompt 快捷键：" + (promptShortcut?.display ?? "未设置")) { [weak self] in self?.changePromptShortcut() })
         menu.addItem(ClosureMenuItem("收藏剪贴板文字") { [weak self] in self?.captureClipboardText() })
         let copyFallback = ClosureMenuItem("兼容复制后备") {
             let enabled = AppEnvironment.preferences.object(forKey: "copyFallbackEnabled") as? Bool ?? true

@@ -38,7 +38,7 @@ enum Layout {
     /// On a line that scrolls with pinned photos anchored, where the photos
     /// scrolling behind them should have faded out. Nil otherwise.
     static func pinnedEdge(count: Int, width: CGFloat, visible: Int, pinned: Int) -> CGFloat? {
-        guard Line.keepOnLine != nil, count > visible, anchorsPinned(pinned, visible: visible) else { return nil }
+        guard count > visible, anchorsPinned(pinned, visible: visible) else { return nil }
         let newest = width / 2 + CGFloat(visible - 1) * spacing / 2
         return newest - CGFloat(visible - pinned) * spacing
     }
@@ -60,7 +60,7 @@ enum Layout {
     /// them, unless they would leave almost no room for the rest.
     static func x(index: Int, count: Int, width: CGFloat, visible: Int, scroll: CGFloat,
                   pinned: Int = 0) -> CGFloat {
-        if Line.keepOnLine != nil && count > visible {
+        if count > visible {
             let newest = width / 2 + CGFloat(visible - 1) * spacing / 2
             if anchorsPinned(pinned, visible: visible), index < pinned {
                 return newest - CGFloat(visible - 1 - index) * spacing
@@ -121,10 +121,23 @@ struct LineView: View {
                         .zIndex(index < line.pinnedLead ? 1 : 0)
                         .position(x: x, y: ropeY - Layout.pinAbove + (Layout.panelHeight - ropeY) / 2)
                 }
+                if line.items.count > line.visibleCount {
+                    if line.scroll < line.maxScroll - 4 {
+                        ScrollHintBadge(text: "← 滚轮看更早")
+                            .position(x: 68, y: Layout.ropeY(x: 68, width: width) + 28)
+                            .allowsHitTesting(false)
+                    }
+                    if line.scroll > 4 {
+                        ScrollHintBadge(text: "滚轮回最新 →")
+                            .position(x: width - 68, y: Layout.ropeY(x: width - 68, width: width) + 28)
+                            .allowsHitTesting(false)
+                    }
+                }
             }
             .animation(.spring(response: 0.55, dampingFraction: 0.78), value: line.items.map(\.id))
             .animation(.easeInOut(duration: 0.3), value: line.items.isEmpty)
             .animation(.spring(response: 0.55, dampingFraction: 0.78), value: line.items.map(\.kept))
+            .animation(.interactiveSpring(response: 0.22, dampingFraction: 0.9), value: line.scroll)
             // Tucked away, the whole line waits above the top edge and slides
             // out from under the menu bar, the way an auto-hiding Dock does.
             .offset(y: line.revealed ? 0 : -(Layout.panelHeight + 12))
@@ -149,7 +162,7 @@ struct LineView: View {
     /// knot when pinned photos stay put, or else the left edge of the screen,
     /// and the right edge. Nil on a line that does not scroll.
     private func scrollBounds(width: CGFloat) -> ClosedRange<CGFloat>? {
-        guard Line.keepOnLine != nil, line.items.count > line.visibleCount else { return nil }
+        guard line.items.count > line.visibleCount else { return nil }
         let pinnedStay = Layout.pinnedEdge(count: line.items.count, width: width,
                                            visible: line.visibleCount, pinned: line.pinnedLead) != nil
         let start = pinnedStay ? knotX(width: width) ?? 0 : 0
@@ -203,6 +216,18 @@ private struct Hint: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
+            .background(.regularMaterial, in: Capsule())
+    }
+}
+
+private struct ScrollHintBadge: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium, design: .rounded))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .background(.regularMaterial, in: Capsule())
     }
 }

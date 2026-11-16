@@ -185,7 +185,21 @@ if CommandLine.arguments.contains("--check-line") {
             guard restoredImages.items.contains(where: { $0.id == temporary.id && $0.temporaryID == temporary.id }) else { fatalError("临时身份恢复") }
             restoredImages.clear()
             guard FileManager.default.fileExists(atPath: try temporaries.url(for: temporary).path) else { fatalError("清空绳不删临时图") }
-            print("PASS: 原生 Line 文字无缩略图、稳定身份/固定/收起恢复、满绳不删、重新挂回和外部刷新")
+            // 默认不限制数量（maxItems == nil）且支持超屏滚轮滑动而不掉落旧卡片。
+            let scrollLine = Line(); scrollLine.soundOn = false
+            scrollLine.visibleCount = 2
+            guard scrollLine.maxItems == nil else { fatalError("默认容量必须为不限数量") }
+            for idx in 1...4 {
+                var extra = note; extra.id = UUID(); extra.operationID = UUID(); extra.title = "滚轮卡片 \(idx)"
+                let savedExtra = try store.save(extra)
+                _ = scrollLine.hang(savedExtra.url, quietly: true)
+            }
+            guard scrollLine.liveCount == 4, scrollLine.maxScroll > 0 else { fatalError("超出一屏不得掉落旧卡片，且应允许滚动") }
+            scrollLine.scroll(by: 120)
+            guard scrollLine.scroll == 120 else { fatalError("滚轮应向前滑动显示更早卡片") }
+            scrollLine.scroll(by: -40)
+            guard scrollLine.scroll == 80 else { fatalError("反向滚轮应滑回最新卡片") }
+            print("PASS: 原生 Line 文字无缩略图、稳定身份/固定/收起恢复、满绳不删、无限滚轮滑动与外部刷新")
         } catch { fputs("Line checks failed: \(error)\n", stderr); exit(1) }
     }
     exit(0)

@@ -67,6 +67,7 @@ struct Shortcut: Equatable {
 
     static let standard = Shortcut(keyCode: kVK_ANSI_T, modifiers: [.control, .option], key: "t")
     static let captureStandard = Shortcut(keyCode: kVK_ANSI_C, modifiers: [.option], key: "c")
+    static let promptStandard = Shortcut(keyCode: kVK_ANSI_P, modifiers: [.option], key: "p")
 
     /// ⌘Z, for Put back while the pointer is on the line. A hot key is a key
     /// on the keyboard, not a letter, so it is the key that types Z with

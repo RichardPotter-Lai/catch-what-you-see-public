@@ -131,3 +131,4 @@ try checkProcessOwnership(fixture)
 
 try checkFuzz()
 try checkCopySelection()
+try checkPrompts(fixture)

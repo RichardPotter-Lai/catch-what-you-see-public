@@ -57,7 +57,7 @@ final class Line: ObservableObject {
     /// uses them to only catch clicks over photos and let the rest through.
     var hitRects: [UUID: CGRect] = [:]
 
-    var maxItems = 8
+    var maxItems: Int? = nil
     /// How many photos fit across the screen. With Keep on line set, the
     /// line can hold more, and the rest are reached by scrolling.
     var visibleCount = 8
@@ -166,7 +166,7 @@ final class Line: ObservableObject {
         // A full line lets the oldest photo fall off the far end. Only one: a
         // line hung on a wider screen keeps its length here instead of losing
         // several photos to a single capture.
-        if liveCount > maxItems, let oldest = oldestLoose {
+        if let maxItems, liveCount > maxItems, let oldest = oldestLoose {
             letGo(oldest.id)
         }
         save()
@@ -215,6 +215,7 @@ final class Line: ObservableObject {
     /// The fallen photos leave their places and the rest close up.
     private func sweepFallen() {
         items.removeAll { $0.falling }
+        clampScroll()
     }
 
     /// "Take everything down": every photo past the knot goes the way of its
@@ -378,17 +379,25 @@ final class Line: ObservableObject {
         }
     }
 
+    var maxScroll: CGFloat {
+        CGFloat(max(0, items.count - visibleCount)) * Layout.spacing
+    }
+
+    private func clampScroll() {
+        let clamped = min(maxScroll, max(0, scroll))
+        if clamped != scroll { scroll = clamped }
+    }
+
     /// Moves along a line that holds more than fit, from a scroll gesture.
     func scroll(by delta: CGFloat) {
-        let most = CGFloat(max(0, items.count - visibleCount)) * Layout.spacing
-        let next = min(most, max(0, scroll + delta))
+        let next = min(maxScroll, max(0, scroll + delta))
         if next != scroll { scroll = next }
     }
 
     /// After Keep on line is lowered, the oldest photos past it go the way
     /// of a full line.
     func trim() {
-        while liveCount > maxItems, let oldest = oldestLoose {
+        while let maxItems, liveCount > maxItems, let oldest = oldestLoose {
             letGo(oldest.id)
         }
         scroll = 0
@@ -544,7 +553,7 @@ final class Line: ObservableObject {
         }
         // As when something new hangs, a full line lets its oldest photo go,
         // never one that just came back.
-        while liveCount > maxItems, let oldest = items.first(where: { !$0.falling && !$0.kept && !back.contains($0.id) }) {
+        while let maxItems, liveCount > maxItems, let oldest = items.first(where: { !$0.falling && !$0.kept && !back.contains($0.id) }) {
             letGo(oldest.id)
         }
         keepKeptFirst()
