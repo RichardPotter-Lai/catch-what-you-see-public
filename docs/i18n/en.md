@@ -2,11 +2,11 @@
 
 <h1 align="center">Catch what you see</h1>
 
-<p align="center">Based on <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a>, adding text collection and Markdown notes.</p>
+<p align="center">Based on <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a>, adding <strong>Option+C</strong> text collection, local Markdown notes, unlimited scroll-wheel clothesline, and an <strong>Option+P</strong> Apple liquid-glass Prompt Card Library.</p>
 
 <p align="center"><a href="../../README.md">中文版</a> · <strong>English</strong></p>
 
-<p align="center"><img src="../assets/clothesline-preview.png" width="960" alt="Feature illustration: text notes, screenshots and Markdown on one clothesline"></p>
+<p align="center"><img src="../assets/clothesline-preview.png" width="960" alt="Feature illustration: clothesline notes, screenshots, Markdown and Prompt card library"></p>
 
 Tendedero hangs screenshots on a clothesline at the top of the screen. I liked that idea and wanted to put selected passages there too. This version keeps the original screenshot interaction, lets text notes hang beside the images with unlimited scroll-wheel browsing, and adds a categorized **Prompt Card Library** (`Option+P`) with 25 built-in prompts (including 10 featured picks) and one-click copy.
 

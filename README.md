@@ -5,7 +5,7 @@
 <h1 align="center">Catch what you see</h1>
 
 <p align="center">
-  基于 <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a> 做的一个改版，主要加了文字收藏和 Markdown 笔记。
+  基于 <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a> 打造的 macOS 工具：支持 <strong>Option+C</strong> 划词收藏、本地 Markdown 笔记、无限滚轮晾衣绳，以及 <strong>Option+P</strong> 苹果液态玻璃 Prompt 分类卡片库。
 </p>
 
 <p align="center">
@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/clothesline-preview.png" width="960" alt="功能示意图：文字便笺、截图与 Markdown 笔记挂在同一根晾衣绳上 / Text notes, screenshots and Markdown on one clothesline">
+  <img src="docs/assets/clothesline-preview.png" width="960" alt="功能示意图：文字便笺、截图、Markdown 笔记晾衣绳与 Prompt 分类卡片库 / Clothesline and Prompt card library">
 </p>
 
 <p align="center">
