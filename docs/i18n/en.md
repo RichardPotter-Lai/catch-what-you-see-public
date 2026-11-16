@@ -8,13 +8,16 @@
 
 <p align="center"><img src="../assets/clothesline-preview.png" width="960" alt="Feature illustration: text notes, screenshots and Markdown on one clothesline"></p>
 
-Tendedero hangs screenshots on a clothesline at the top of the screen. I liked that idea and wanted to put selected passages there too. This version keeps the original screenshot interaction and lets text notes hang beside the images.
+Tendedero hangs screenshots on a clothesline at the top of the screen. I liked that idea and wanted to put selected passages there too. This version keeps the original screenshot interaction, lets text notes hang beside the images with unlimited scroll-wheel browsing, and adds a categorized **Prompt Card Library** (`Option+P`) with 25 built-in prompts (including 10 featured picks) and one-click copy.
 
-[Download](https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest) · [Install](../INSTALL.md)
+[Download Latest (macOS Universal)](https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest) · [Install](../INSTALL.md)
+<br><sub>macOS 14+ only (Universal arm64 + x86_64; Windows is not supported)</sub>
 
 ## Use it
 
-Select text, then press and release **Option+C**. Catch saves a local Markdown note and hangs a preview on the clothesline. Move the pointer to the middle of the menu bar, or press **Control+Option+T**, to bring it down. Click a text note to copy its excerpt; double-click to open the MD file.
+Select text, then press and release **Option+C**. Catch saves a local Markdown note and hangs a preview on the clothesline. Move the pointer to the middle of the menu bar, or press **Control+Option+T**, to bring it down (scroll with your mouse wheel when items exceed the screen). Click a text note to copy its excerpt; double-click to open the MD file.
+
+Press **Option+P** (or click **Prompt 提示词库…** in the menu bar) to open the liquid-glass Prompt board, filter by category, create/edit custom prompts, and click any card to copy immediately.
 
 Screenshots use the usual macOS shortcuts. They stay temporary until you choose to collect them. Hiding a card or filling the line does not delete its file.
 

@@ -17,14 +17,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest">下载 macOS 版</a> ·
+  <a href="https://github.com/RichardPotter-Lai/catch-what-you-see-public/releases/latest">下载最新版（macOS 通用包）</a> ·
   <a href="docs/INSTALL.md">安装说明</a> ·
   <a href="#从源码构建">从源码构建</a>
   <br>
-  <sub>macOS 14+ · 功能示意图 / Feature illustration</sub>
+  <sub>仅支持 macOS 14+（自动兼容 Apple 芯片与 Intel，暂不支持 Windows） · 功能示意图 / Feature illustration</sub>
 </p>
 
-原项目会把截图挂在屏幕上方的晾衣绳上。我很喜欢这个设计，也想把读文章时选中的几句话放上去，于是在原有代码上加了文字采集。现在，截图和文字便笺可以挂在同一根绳上，想再看或复制时，把晾衣绳拉下来就行。
+原项目会把截图挂在屏幕上方的晾衣绳上。我很喜欢这个设计，也想把读文章时选中的几句话放上去，于是在原有代码上加了文字采集。现在，截图和文字便笺可以挂在同一根绳上，想再看或复制时，把晾衣绳拉下来或滚轮回划就行。
+
+新版本还内置了 **Prompt 分类卡片库**（支持 `Option+P` 或从菜单栏一键呼出），预置 25 条常用 Prompt（含 10 条「★ 卡兹克精选」），支持按分类筛选、点击卡片直接复制，并可自定义增删改与分类管理。
 
 ## 怎么用
 
@@ -33,7 +35,8 @@
 | 操作 | 会发生什么 |
 | :-- | :-- |
 | Option+C | 收藏当前选中的文字。 |
-| 鼠标停在顶部菜单栏中部，或 Control+Option+T | 展开晾衣绳。 |
+| Option+P 或点击菜单栏「Prompt 提示词库…」 | 打开 Prompt 分类卡片墙，点击任意卡片立即复制全文。 |
+| 鼠标停在顶部菜单栏中部，或 Control+Option+T | 展开晾衣绳；超出屏幕时用鼠标滚轮即可左右回划，不会自动掉落。 |
 | 单击文字便笺 | 复制摘录正文。 |
 | 双击文字便笺 | 打开对应的 MD 文件。 |
 | 使用 macOS 截图快捷键 | 截图先临时挂上，需要长期保存时再点收藏。 |
@@ -58,15 +61,17 @@
 
 - Option+C 收藏选中文字，以及受控复制后备和剪贴板收藏入口。
 - 文字便笺、Markdown 文件保存，以及本地搜索、预览和外部编辑刷新。
+- **Prompt 分类卡片墙**（`Option+P` / 菜单栏呼出）：苹果液态玻璃面板，内置 25 条常用 Prompt（含 10 条「★ 卡兹克精选」），支持分类管理、自由新增编辑与一键复制。
+- **晾衣绳无限滚动浏览**：超出屏幕显示数量不会自动掉下绳子，支持鼠标滚轮顺滑回划查看历史卡片。
 - 文字与图片共用的删除、回收和恢复流程。
 
 保留了晾衣绳的样子，也补了悬停时的小幅摆动、删除音效和半秒提示。
 
 ## 安装
 
-需要 macOS 14 或更新版本，安装包同时包含 Apple 芯片和 Intel 版本。
+> **平台说明**：本项目基于 Swift 与 AppKit/SwiftUI 原生构建，仅支持 **macOS 14 或更新版本**（单个通用安装包已同时包含 Apple Silicon `arm64` 与 Intel `x86_64`，会自动适配你的 Mac；**暂不提供 Windows 版本**）。
 
-**推荐：一行命令安装**（打开“终端”粘贴回车，不需要 Homebrew 或 Swift）：
+**推荐：一行命令自动匹配安装**（打开“终端”粘贴回车，不需要 Homebrew 或 Swift）：
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/RichardPotter-Lai/catch-what-you-see-public/main/scripts/install-macos.sh | bash
